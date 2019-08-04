@@ -2,17 +2,58 @@
 import requests
 from bs4 import BeautifulSoup
 
-url = ''
-#test = request.Request(url, headers={'User-Agent': "Firefox"})
-test = requests.get(url)
-print(test.status_code)
-soup = BeautifulSoup(test.text, 'lxml')
+def content_fetch(url):
+    return requests.get(url)
 
-#for link in soup.find_all('a', class_='touch'):
-#    print(link.get('href', None))
-link = soup.find_all('a', class_='touch')[2].get('href', None)
-print(link)
+def request_successful(req):
+    return req.status_code == requests.codes.ok
 
-with open(filename, 'wb') as file:
-    fetch = requests.get(link)
-    file.write(fetch.content)
+def fetch_links(file):
+    soup = BeautifulSoup(file.text, 'lxml')
+    return [link for link in soup.find_all('a', class_='touch')]
+
+def give_choices(list_choices):
+    for index, link in enumerate(list_choices, start=1):
+        diff_type = ' '.join(link.text.split())
+        print('{}) {}'.format(index, diff_type))
+    print()
+
+def write_to_file(list_choices):
+    give_choices(list_choices)
+
+    user_choice = int(input('Please pick your choice: '))
+    user_choice = user_choice-1
+
+    link = list_choices[user_choice].get('href', None)
+
+    filename = link.split('/')
+    filename = filename[-1]
+    print("It's going to be saved as {}".format(filename))
+
+    filename = input('Insert new name default({}): '.format(filename)) or filename
+
+    if not filename.endswith('.extension'):
+        filename = filename + '.extension'
+
+    with open(filename, 'wb') as file:
+        fetch = content_fetch(link)
+        if request_successful(fetch):
+            file.write(fetch.content)
+        else:
+            print("Issues with file fetching")
+            print("Code Received: {}".format(req))
+
+if __name__ == "__main__":
+    with open('/path/to/file') as file:
+        for line in file:
+            user_input = input("Work on the next line: ")
+            if user_input == 'y':
+                req = content_fetch(line)
+                if request_successful(req):
+                    links = fetch_links(req)
+                    write_to_file(links)
+                else:
+                    print("Request Failed!")
+                    print('Code Received: {}'.format(req))
+            else:
+                break
