@@ -2,6 +2,10 @@
 import requests
 from bs4 import BeautifulSoup
 from file_read_backwards import FileReadBackwards
+import validators.url as url_valid
+
+def validate(url):
+    return url_valid(url)
 
 def content_fetch(url):
     return requests.get(url)
@@ -18,20 +22,40 @@ def give_choices(list_choices):
         diff_type = ' '.join(link.text.split())
         print('{}) {}'.format(index, diff_type))
     print()
+    return
+
+def choose_from(msg, *choices):
+    print("Please choose from these choices: {}".format(choices))
+    user_input = input(msg)
+    print()
+
+    while user_input not in choices:
+        print("Please choose from these choices: {}".format(choices))
+        user_input = input(msg)
+        print()
+
+    return user_input
 
 def write_to_file(list_choices):
     give_choices(list_choices)
 
-    user_choice = int(input('Please pick your choice: '))
-    user_choice = user_choice-1
+    message = 'Please pick your choice: '
+
+    user_choice = choose_from(message, *list(map(str,range(1,len(list_choices)+1))), 'end')
+
+    if user_choice == 'end':
+        print("User chose not to proceed.")
+        return
+
+    user_choice = int(user_choice)-1
 
     link = list_choices[user_choice].get('href', None)
 
     filename = link.split('/')
     filename = filename[-1]
-    print("It's going to be saved as {}".format(filename))
 
     filename = input('Insert new name default({}): '.format(filename)) or filename
+    print("It's going to be saved as {}".format(filename))
 
     if not filename.endswith('.extension'):
         filename = filename + '.extension'
@@ -40,27 +64,43 @@ def write_to_file(list_choices):
         fetch = content_fetch(link)
         if request_successful(fetch):
             file.write(fetch.content)
+            return 'Successfully written to file.'
         else:
             print("Issues with file fetching")
             print("Code Received: {}".format(req))
+    return
 
 def main():
     li_to_del = []
-    with FileReadBackwards('/path/to/file', mode='r', encoding = 'utf-8') as file:
+    message = "Work on the next line: "
+    with FileReadBackwards('/path/to/file', encoding = 'utf-8') as file:
         for line in file:
-            user_input = input("Work on the next line: ")
-            if user_input == 'y':
-                req = content_fetch(line.strip())
-                if request_successful(req):
-                    links = fetch_links(req)
-                    write_to_file(links)
-                    li_to_del.append(line) #if successful download to delete later.
+            user_input = choose_from(message, 'yes', 'no', 'skip')
+            if user_input == 'yes':
+                link = line.strip()
+                if validate(link):
+                    req = content_fetch(link)
+                    if request_successful(req):
+                        which_file = link.split('/')[-1]
+                        which_file = which_file.split('.')[0]
+                        print('Fetching: {}'.format(which_file))
+                        links = fetch_links(req)
+                        if write_to_file(links):
+                            li_to_del.append(line) #if successful download to delete later.
+                        else:
+                            print("Nothing was downloaded this time.\n")
+                    else:
+                        print("Request Failed!")
+                        print('Code Received: {}\n'.format(req))
                 else:
-                    print("Request Failed!")
-                    print('Code Received: {}'.format(req))
+                    print('{} is not a valid link.\n'.format(link))
             else:
-                print("Feel free to start again.")
-                break
+                if user_input == 'no':
+                    print('Feel Free To Start Again.')
+                    break
+                elif user_input == 'skip':
+                    print("Skipping This\n")
+
 
 if __name__ == "__main__":
     main()
