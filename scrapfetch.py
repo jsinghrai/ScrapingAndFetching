@@ -1,6 +1,7 @@
 #from urllib import request
 import requests
 from bs4 import BeautifulSoup
+from file_read_backwards import FileReadBackwards
 
 def content_fetch(url):
     return requests.get(url)
@@ -43,17 +44,23 @@ def write_to_file(list_choices):
             print("Issues with file fetching")
             print("Code Received: {}".format(req))
 
-if __name__ == "__main__":
-    with open('/path/to/file') as file:
+def main():
+    li_to_del = []
+    with FileReadBackwards('/path/to/file', mode='r', encoding = 'utf-8') as file:
         for line in file:
             user_input = input("Work on the next line: ")
             if user_input == 'y':
-                req = content_fetch(line)
+                req = content_fetch(line.strip())
                 if request_successful(req):
                     links = fetch_links(req)
                     write_to_file(links)
+                    li_to_del.append(line) #if successful download to delete later.
                 else:
                     print("Request Failed!")
                     print('Code Received: {}'.format(req))
             else:
+                print("Feel free to start again.")
                 break
+
+if __name__ == "__main__":
+    main()
