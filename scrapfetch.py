@@ -37,6 +37,12 @@ def fetch_links(res):
     return [link for link in soup.find_all('a', class_='touch')]
 
 def give_choices(list_choices):
+    '''
+    Takes in list of 'bs4.element.Tag'.
+    Iterates over list of 'bs4.element.Tag' and parses out list of
+    choices to present to the user to pick from.
+    Returns None
+    '''
     for index, link in enumerate(list_choices, start=1):
         diff_type = ' '.join(link.text.split())
         print('{}) {}'.format(index, diff_type))
@@ -44,24 +50,49 @@ def give_choices(list_choices):
     return
 
 def choose_from(msg, *choices):
+    '''
+    Takes two argument: user message to present for input and a
+    tuple that packs list of choices.
+    Runs as long as user choice doesn't match given choices.
+    Returns the choice user made.
+    '''
     print("Please choose from these choices: {}".format(choices))
-    user_input = input(msg)
+    user_input = input(msg).lower()
     print()
 
     while user_input not in choices:
         print("Please choose from these choices: {}".format(choices))
-        user_input = input(msg)
+        user_input = input(msg).lower()
         print()
 
     return user_input
 
+def fetch_file_name(url):
+    '''
+    Takes url as the argument to parse out the file's name.
+    Returns the file's name from the url or None if empty.
+    '''
+    #In case string is empty
+    if not url:
+        return
+    file_name = url.split('/')
+    file_name = file_name[-1]
+    return file_name
+
 def write_to_file(list_choices):
+    '''
+    Takes in list of 'bs4.element.Tag'.
+    Returns String for successful download and write to file, otherwise
+    returns None.
+    '''
     give_choices(list_choices)
 
+    #Preparing the message and user choices to present to user.
     message = 'Please pick your choice: '
     user_choices = list(map(str,range(1,len(list_choices)+1)))
+    user_choices.append('end')
 
-    user_choice = choose_from(message, *user_choices, 'end')
+    user_choice = choose_from(message, *user_choices)
 
     if user_choice == 'end':
         print("User chose not to proceed.")
@@ -69,18 +100,20 @@ def write_to_file(list_choices):
 
     user_choice = int(user_choice)-1
 
+    #grabs the href attribute from the list with given user choice
     link = list_choices[user_choice].get('href', None)
 
-    filename = link.split('/')
-    filename = filename[-1]
+    #Parses the file name out from the link.
+    file_name = fetch_file_name(link)
 
-    filename = input('Insert new name default({}): '.format(filename)) or filename
-    print("It's going to be saved as '{}'".format(filename))
+    file_name = input('Insert new name default({}): '.format(file_name)) or file_name
 
-    if not filename.endswith('.extension'):
-        filename = filename + '.extension'
+    if not file_name.endswith('.extension'):
+        file_name = file_name + '.extension'
 
-    with open(filename, 'wb') as file:
+    print("It's going to be saved as '{}'\n".format(file_name))
+
+    with open(file_name, 'wb') as file:
         fetch = content_fetch(link)
         if request_successful(fetch):
             file.write(fetch.content)
@@ -90,43 +123,62 @@ def write_to_file(list_choices):
             print("Code Received: '{}'".format(req))
     return
 
-def remove_from_file(remove_this):
-    pass
+def remove_from_file(remove_this, file_name):
+    '''
+    Takes two inputs: list of links and file name.
+    Removes everything in the list from the given file name.
+    '''
+    for link in remove_this:
+        print(link)
+    return
 
 def main():
+    #stores links which will be deleted from the file.
     li_to_del = []
-    message = "Work on the next line: "
-    user_choices = ['yes', 'no', 'skip']
 
-    with FileReadBackwards('/path/to/file', encoding = 'utf-8') as file:
+    #message which will be displayed to user for input.
+    message = "Do you want to continue: "
+
+    #Gives the user choices to pick from.
+    user_choices = ['yes', 'end', 'skip']
+
+    #the file which stores the links.
+    link_file = '/path/to/file'
+
+    with FileReadBackwards(link_file, encoding = 'utf-8') as file:
         for line in file:
+            link = line.strip()
+            file_name = fetch_file_name(link)
+            print('*'*50)
+            print('Requesting: {}'.format(file_name))
+
             user_input = choose_from(message, *user_choices)
+
             if user_input == 'yes':
-                link = line.strip()
                 if validate(link):
-                    req = content_fetch(link)
-                    if request_successful(req):
-                        which_file = link.split('/')[-1]
-                        which_file = which_file.split('.')[0]
-                        print('Fetching: {}'.format(which_file))
-                        links = fetch_links(req)
+                    response = content_fetch(link)
+                    if request_successful(response):
+                        links = fetch_links(response)
                         if write_to_file(links):
+                            print("Successfully written to file. Adding link to "
+                                    "the list to delete.\n")
                             li_to_del.append(line) #if successful download to delete later.
                         else:
                             print("Nothing was downloaded this time.\n")
                     else:
                         print("Request Failed!")
-                        print('Code Received: {}\n'.format(req))
+                        print('Code Received: {}\n'.format(response))
                 else:
                     print('{} is not a valid link.\n'.format(link))
             else:
-                if user_input == 'no':
+                if user_input == 'end':
                     print('Feel Free To Start Again.')
+                    print('*'*50)
                     break
                 elif user_input == 'skip':
-                    print("Skipping This\n")
+                    print("Skipping: {}\n".format(file_name))
 
-        remove_from_file(li_to_del)
+        remove_from_file(li_to_del, link_file)
 
 
 if __name__ == "__main__":
