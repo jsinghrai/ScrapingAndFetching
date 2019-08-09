@@ -4,12 +4,14 @@ from bs4 import BeautifulSoup
 from file_read_backwards import FileReadBackwards
 from validators import url as url_valid
 
+
 def validate(url):
     '''
     Returns True if the url is valid, otherwise returns
     :class: `~validators.utils.ValidationFailure'.
     '''
     return url_valid(url)
+
 
 def content_fetch(url):
     '''
@@ -18,6 +20,7 @@ def content_fetch(url):
     '''
     return requests.get(url)
 
+
 def request_successful(res):
     '''
     Takes in Response object as argument.
@@ -25,6 +28,7 @@ def request_successful(res):
     False.
     '''
     return res.status_code == requests.codes.ok
+
 
 def fetch_links(res):
     '''
@@ -35,6 +39,7 @@ def fetch_links(res):
     '''
     soup = BeautifulSoup(res.text, 'lxml')
     return [link for link in soup.find_all('a', class_='touch')]
+
 
 def give_choices(list_choices):
     '''
@@ -48,6 +53,7 @@ def give_choices(list_choices):
         print('{}) {}'.format(index, diff_type))
     print()
     return
+
 
 def choose_from(msg, *choices):
     '''
@@ -67,17 +73,19 @@ def choose_from(msg, *choices):
 
     return user_input
 
+
 def fetch_file_name(url):
     '''
     Takes url as the argument to parse out the file's name.
     Returns the file's name from the url or None if empty.
     '''
-    #In case string is empty
+    # In case string is empty
     if not url:
         return
     file_name = url.split('/')
     file_name = file_name[-1]
     return file_name
+
 
 def write_to_file(list_choices):
     '''
@@ -87,9 +95,9 @@ def write_to_file(list_choices):
     '''
     give_choices(list_choices)
 
-    #Preparing the message and user choices to present to user.
+    # Preparing the message and user choices to present to user.
     message = 'Please pick your choice: '
-    user_choices = list(map(str,range(1,len(list_choices)+1)))
+    user_choices = list(map(str, range(1, len(list_choices)+1)))
     user_choices.append('end')
 
     user_choice = choose_from(message, *user_choices)
@@ -100,10 +108,10 @@ def write_to_file(list_choices):
 
     user_choice = int(user_choice)-1
 
-    #grabs the href attribute from the list with given user choice
+    # grabs the href attribute from the list with given user choice
     link = list_choices[user_choice].get('href', None)
 
-    #Parses the file name out from the link.
+    # Parses the file name out from the link.
     file_name = fetch_file_name(link)
 
     file_name = input('Insert new name default({}): '.format(file_name)) or file_name
@@ -123,6 +131,7 @@ def write_to_file(list_choices):
             print("Code Received: '{}'".format(req))
     return
 
+
 def remove_from_file(remove_this, file_name):
     '''
     Takes two inputs: list of links and file name.
@@ -132,20 +141,21 @@ def remove_from_file(remove_this, file_name):
         print(link)
     return
 
+
 def main():
-    #stores links which will be deleted from the file.
+    # stores links which will be deleted from the file.
     li_to_del = []
 
-    #message which will be displayed to user for input.
+    # message which will be displayed to user for input.
     message = "Do you want to continue: "
 
-    #Gives the user choices to pick from.
+    # Gives the user choices to pick from.
     user_choices = ['yes', 'end', 'skip']
 
-    #the file which stores the links.
+    # the file which stores the links.
     link_file = '/path/to/file'
 
-    with FileReadBackwards(link_file, encoding = 'utf-8') as file:
+    with FileReadBackwards(link_file, encoding='utf-8') as file:
         for line in file:
             link = line.strip()
             file_name = fetch_file_name(link)
@@ -161,8 +171,8 @@ def main():
                         links = fetch_links(response)
                         if write_to_file(links):
                             print("Successfully written to file. Adding link to "
-                                    "the list to delete.\n")
-                            li_to_del.append(line) #if successful download to delete later.
+                                  "the list to delete.\n")
+                            li_to_del.append(line)  # if successful download to delete later.
                         else:
                             print("Nothing was downloaded this time.\n")
                     else:
