@@ -3,6 +3,8 @@ import requests
 from bs4 import BeautifulSoup
 from file_read_backwards import FileReadBackwards
 from validators import url as url_valid
+import fileinput
+import os
 
 
 def validate(url):
@@ -87,6 +89,22 @@ def fetch_file_name(url):
     return file_name
 
 
+def verify_file_exist(file_name):
+    '''
+    Takes file name as argument and checks if it exists in the given
+    path if file already exists. Ask user to change name while distinct name
+    is not chosen.
+    '''
+    while os.path.isfile(os.path.join(look_path, file_name)):
+        file_name = input("File '{}' exist, either verify the file is different"
+                          " or choose a different name: "".format(file_name)) or file_name
+
+        if not file_name.endswith('.extension'):
+            file_name = file_name + '.extension'
+
+    return file_name
+
+
 def write_to_file(list_choices):
     '''
     Takes in list of 'bs4.element.Tag'.
@@ -114,14 +132,18 @@ def write_to_file(list_choices):
     # Parses the file name out from the link.
     file_name = fetch_file_name(link)
 
+    # remove this if you want to save it as default and not be asked to change it
     file_name = input('Insert new name default({}): '.format(file_name)) or file_name
 
     if not file_name.endswith('.extension'):
         file_name = file_name + '.extension'
 
+    # this needs to be there to verify if the file name doesn't exist.
+    file_name = verify_file_exist(file_name)
+
     print("It's going to be saved as '{}'\n".format(file_name))
 
-    with open(file_name, 'wb') as file:
+    with open(os.path.join(look_path, file_name), 'wb') as file:
         fetch = content_fetch(link)
         if request_successful(fetch):
             file.write(fetch.content)
@@ -137,8 +159,14 @@ def remove_from_file(remove_this, file_name):
     Takes two inputs: list of links and file name.
     Removes everything in the list from the given file name.
     '''
-    for link in remove_this:
-        print(link)
+    print("Removing These: ")
+
+    for line in remove_this:
+        print(line.strip())
+
+    for link in fileinput.input(file_name, inplace=True, backup='.bak'):
+        if link.strip() not in remove_this:
+            print(link.strip())
     return
 
 
@@ -155,41 +183,46 @@ def main():
     # the file which stores the links.
     link_file = '/path/to/file'
 
-    with FileReadBackwards(link_file, encoding='utf-8') as file:
-        for line in file:
-            link = line.strip()
-            file_name = fetch_file_name(link)
-            print('*'*50)
-            print('Requesting: {}'.format(file_name))
+    try:
+        with FileReadBackwards(link_file, encoding='utf-8') as file:
+            for line in file:
+                file_name = fetch_file_name(line)
+                print('*'*50)
+                print('Requesting: {}'.format(file_name))
 
-            user_input = choose_from(message, *user_choices)
+                user_input = choose_from(message, *user_choices)
 
-            if user_input == 'yes':
-                if validate(link):
-                    response = content_fetch(link)
-                    if request_successful(response):
-                        links = fetch_links(response)
-                        if write_to_file(links):
-                            print("Successfully written to file. Adding link to "
-                                  "the list to delete.\n")
-                            li_to_del.append(line)  # if successful download to delete later.
+                if user_input == 'yes':
+                    if validate(line):
+                        response = content_fetch(line)
+                        if request_successful(response):
+                            links = fetch_links(response)
+                            if write_to_file(links):
+                                print("Successfully written to file. Adding link to "
+                                      "the list to delete.\n")
+                                li_to_del.append(line)  # if successful download to delete later.
+                            else:
+                                print("Nothing was downloaded this time.\n")
                         else:
-                            print("Nothing was downloaded this time.\n")
+                            print("Request Failed!")
+                            print('Code Received: {}\n'.format(response))
                     else:
-                        print("Request Failed!")
-                        print('Code Received: {}\n'.format(response))
+                        print('{} is not a valid link.\n'.format(line))
                 else:
-                    print('{} is not a valid link.\n'.format(link))
-            else:
-                if user_input == 'end':
-                    print('Feel Free To Start Again.')
-                    print('*'*50)
-                    break
-                elif user_input == 'skip':
-                    print("Skipping: {}\n".format(file_name))
+                    if user_input == 'end':
+                        print('Feel Free To Start Again.')
+                        print('*'*50)
+                        break
+                    elif user_input == 'skip':
+                        print("Skipping: {}\n".format(file_name))
+    except FileNotFoundError:
+        print("No such file: '{}'".format(link_file))
 
+    if li_to_del:
         remove_from_file(li_to_del, link_file)
 
 
 if __name__ == "__main__":
-    main()
+    # After fetching files will be stored in this directory.
+    look_path = os.path.join(os.getcwd(), 'StoreHere')
+    # main()
