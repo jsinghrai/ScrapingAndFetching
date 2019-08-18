@@ -92,12 +92,13 @@ def fetch_file_name(url):
 def verify_file_exist(file_name):
     '''
     Takes file name as argument and checks if it exists in the given
-    path if file already exists. Ask user to change name while distinct name
-    is not chosen.
+    path. If file already exists, ask user to change name while distinct name
+    is not chosen, otherwise return already chosen name.
+    Returns file's name
     '''
     while os.path.isfile(os.path.join(look_path, file_name)):
         file_name = input("File '{}' exist, either verify the file is different"
-                          " or choose a different name: "".format(file_name)) or file_name
+                          " or choose a different name: ".format(file_name)) or file_name
 
         if not file_name.endswith('.extension'):
             file_name = file_name + '.extension'
@@ -139,6 +140,7 @@ def write_to_file(list_choices):
         file_name = file_name + '.extension'
 
     # this needs to be there to verify if the file name doesn't exist.
+    # remove this if Importing this file as module, otherwise it'll crash.
     file_name = verify_file_exist(file_name)
 
     print("It's going to be saved as '{}'\n".format(file_name))
@@ -225,4 +227,4 @@ def main():
 if __name__ == "__main__":
     # After fetching files will be stored in this directory.
     look_path = os.path.join(os.getcwd(), 'StoreHere')
-    # main()
+    main()
