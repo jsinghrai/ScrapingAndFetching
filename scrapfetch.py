@@ -51,7 +51,7 @@ def give_choices(list_choices):
     Returns None
     '''
     for index, link in enumerate(list_choices, start=1):
-        diff_type = ' '.join(link.text.split())
+        diff_type = ' '.join(link.text.split())  # helps remove whitespace in middle
         print('{}) {}'.format(index, diff_type))
     print()
     return
@@ -112,47 +112,50 @@ def write_to_file(list_choices):
     Returns String for successful download and write to file, otherwise
     returns None.
     '''
-    give_choices(list_choices)
+    if list_choices:
+        give_choices(list_choices)
 
-    # Preparing the message and user choices to present to user.
-    message = 'Please pick your choice: '
-    user_choices = list(map(str, range(1, len(list_choices)+1)))
-    user_choices.append('end')
+        # Preparing the message and user choices to present to user.
+        message = 'Please pick your choice: '
+        user_choices = list(map(str, range(1, len(list_choices)+1)))
+        user_choices.append('end')
 
-    user_choice = choose_from(message, *user_choices)
+        user_choice = choose_from(message, *user_choices)
 
-    if user_choice == 'end':
-        print("User chose not to proceed.")
-        return
+        if user_choice == 'end':
+            print("User chose not to proceed.")
+            return
 
-    user_choice = int(user_choice)-1
+        user_choice = int(user_choice)-1
 
-    # grabs the href attribute from the list with given user choice
-    link = list_choices[user_choice].get('href', None)
+        # grabs the href attribute from the list with given user choice
+        link = list_choices[user_choice].get('href', None)
 
-    # Parses the file name out from the link.
-    file_name = fetch_file_name(link)
+        # Parses the file name out from the link.
+        file_name = fetch_file_name(link)
 
-    # remove this if you want to save it as default and not be asked to change it
-    file_name = input('Insert new name default({}): '.format(file_name)) or file_name
+        # remove this if you want to save it as default and not be asked to change it
+        file_name = input('Insert new name default({}): '.format(file_name)) or file_name
 
-    if not file_name.endswith('.extension'):
-        file_name = file_name + '.extension'
+        if not file_name.endswith('.extension'):
+            file_name = file_name + '.extension'
 
-    # this needs to be there to verify if the file name doesn't exist.
-    # remove this if Importing this file as module, otherwise it'll crash.
-    file_name = verify_file_exist(file_name)
+        # this needs to be there to verify if the file name doesn't exist.
+        # remove this if Importing this file as module, otherwise it'll crash.
+        file_name = verify_file_exist(file_name)
 
-    print("It's going to be saved as '{}'\n".format(file_name))
+        print("It's going to be saved as '{}'\n".format(file_name))
 
-    with open(os.path.join(look_path, file_name), 'wb') as file:
-        fetch = content_fetch(link)
-        if request_successful(fetch):
-            file.write(fetch.content)
-            return 'Successfully written to file.'
-        else:
-            print("Issues with file fetching")
-            print("Code Received: '{}'".format(req))
+        with open(os.path.join(look_path, file_name), 'wb') as file:
+            fetch = content_fetch(link)
+            if request_successful(fetch):
+                file.write(fetch.content)
+                return 'Successfully written to file.'
+            else:
+                print("Issues with file fetching")
+                print("Code Received: '{}'".format(req))
+    else:
+        print("There are no links to select from. List is Empty.")
     return
 
 
