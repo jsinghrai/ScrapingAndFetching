@@ -93,7 +93,18 @@ class TestScrapFetch(unittest.TestCase):
             self.assertEqual(test, 'asf')
 
     def test_fetch_file_name(self):
-        pass
+        self.assertEqual(scrapfetch.fetch_file_name('www.google.com/test.html'),
+                         'test.html')
+        self.assertEqual(scrapfetch.fetch_file_name('www.google.com/index/newFile.html'),
+                         'newFile.html')
+        self.assertEqual(scrapfetch.fetch_file_name(self.url1),
+                         self.url1)
+        self.assertEqual(scrapfetch.fetch_file_name(self.url2),
+                         self.url2)
+        self.assertEqual(scrapfetch.fetch_file_name(self.url3),
+                         'google.com')
+        self.assertEqual(scrapfetch.fetch_file_name(self.url4),
+                         'www.google.com')
 
     def test_verify_file_exist(self):
         pass
