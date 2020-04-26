@@ -41,7 +41,7 @@ You should deactivate the python virtual environment if you have activated it, o
 If you are using any Desktop Environment then you can just delete the folder named `ScrapFetch` and `ScrapingAndFetching`.
 
 ### Running
-If you are running the file as main module then you have to edit few things before running the `scrapfetch.py` script. First, you much edit the `link_file` variable in `main()` function and assign the file with links in it.
+If you are running the file as main module then you have to edit few things before running the `scrapfetch.py` script. First, you must edit the `link_file` variable in `main()` function and assign the file with links in it.
 
 `Ex: link_file = '/home/$USER/Desktop/file_name.txt'`.
 
